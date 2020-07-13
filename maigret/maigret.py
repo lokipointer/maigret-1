@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 """
-Sherlock: Find Usernames Across Social Networks Module
+Maigret (Sherlock fork): Find Usernames Across Social Networks Module
 
 This module contains the main logic to search for usernames at social
 networks.
@@ -16,6 +16,7 @@ import re
 import sys
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from time import monotonic
+from http.cookies import SimpleCookie
 
 import requests
 from socid_extractor import parse, extract
@@ -27,7 +28,7 @@ from result import QueryResult
 from notify import QueryNotifyPrint
 from sites  import SitesInformation
 
-module_name = "Sherlock: Find Usernames Across Social Networks"
+module_name = "Maigret (Sherlock fork): Find Usernames Across Social Networks"
 __version__ = "0.12.2"
 
 
@@ -194,6 +195,7 @@ def sherlock(username, site_data, query_notify,
     # First create futures for all requests. This allows for the requests to run in parallel
     for social_network, net_info in site_data.items():
 
+        # print(id_type) # print(social_network)
         if net_info.get('type', 'username') != id_type:
             continue
 
@@ -211,7 +213,7 @@ def sherlock(username, site_data, query_notify,
         # A user agent is needed because some sites don't return the correct
         # information since they think that we are bots (Which we actually are...)
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11.1; rv:55.0) Gecko/20100101 Firefox/55.0',
         }
 
         if "headers" in net_info:
@@ -267,18 +269,35 @@ def sherlock(username, site_data, query_notify,
                 # The final result of the request will be what is available.
                 allow_redirects = True
 
+            def parse_cookies(cookies_str):
+                cookies = SimpleCookie()
+                cookies.load(cookies_str)
+                return {key: morsel.value for key, morsel in cookies.items()}
+
+            # cookies_str = 'collections_gid=117041; cph=948; cpw=550; yandexuid=6894705951593339704; i=NJAxWCDEQdhKbNGBppYN/5sl4XuX2Lq/lgZELKOVfjfX3boBnqOMyP0s0MSwcBbeuqPaRqjWPrsSXORVLDlLJ7Qi+RI=; font_loaded=YSv1; yuidss=6894705951593339704; ymex=1908699704.yrts.1593339704; _ym_wasSynced=%7B%22time%22%3A1593339704889%2C%22params%22%3A%7B%22eu%22%3A0%7D%2C%22bkParams%22%3A%7B%7D%7D; gdpr=0; _ym_uid=1593339705197323602; _ym_d=1593339705; mda=0; _ym_isad=2; ar=1593339710541646-252043; _ym_visorc_10630330=b; spravka=dD0xNTkzMzM5NzIyO2k9NS4yMjguMjI0LjM3O3U9MTU5MzMzOTcyMjM2MDI4NTg0MjtoPWM3NThkYjU0MzYyMzViZDEwMzU3ZGY3NTUwYzViNDE1'
+            cookies_str = ''
+
+            if 'yandex' in url_probe:
+                # import logging
+                # logging.error(cookies_str)
+                cookies = parse_cookies(cookies_str)
+            else:
+                cookies = None
+
             # This future starts running the request in a new thread, doesn't block the main thread
             if proxy is not None:
                 proxies = {"http": proxy, "https": proxy}
                 future = request_method(url=url_probe, headers=headers,
                                         proxies=proxies,
                                         allow_redirects=allow_redirects,
-                                        timeout=timeout
+                                        timeout=timeout,
+                                        # cookies=cookies
                                         )
             else:
                 future = request_method(url=url_probe, headers=headers,
                                         allow_redirects=allow_redirects,
-                                        timeout=timeout
+                                        timeout=timeout,
+                                        # cookies=cookies
                                         )
 
             # Store future in data for access later
@@ -350,6 +369,7 @@ def sherlock(username, site_data, query_notify,
         extracted_ids_data = ""
 
         if ids_search and r:
+            # print(r.text)
             extracted_ids_data = extract(r.text)
 
             if extracted_ids_data:
@@ -592,7 +612,7 @@ def main():
         sys.exit(1)
 
     if args.parse_url:
-        page, _ = parse(args.parse_url)
+        page, _ = parse(args.parse_url, cookies_str='collections_gid=213; cph=948; cpw=790; yandexuid=2146767031582893378; yuidss=2146767031582893378; gdpr=0; _ym_uid=1582893380492618461; mda=0; ymex=1898253380.yrts.1582893380#1900850969.yrtsi.1585490969; font_loaded=YSv1; yandex_gid=213; my=YwA=; _ym_uid=1582893380492618461; _ym_d=1593451737; L=XGJfaARJWEAARGILWAQKbXJUUU5NSEJHNAwrIxkaE11SHD4P.1593608730.14282.352228.74f1540484d115d5f534c370a0d54d14; yandex_login=danilovdelta; i=pQT2fDoFQAd1ZkIJW/qOXaKw+KI7LXUGoTQbUy5dPTdftfK7HFAnktwsf4MrRy4aQEk0sqxbZGY18+bnpKkrDgt29/8=; ys=udn.cDpkYW5pbG92ZGVsdGE%3D#wprid.1593608013100941-1715475084842016754100299-production-app-host-man-web-yp-306#ymrefl.DD2F275B69BCF594; zm=m-white_bender.webp.css-https%3As3home-static_KgOlxZDBNvw0efFr5riblj4yPtY%3Al; yp=1908968730.udn.cDpkYW5pbG92ZGVsdGE%3D#1595886694.ygu.1#1609637986.szm.2:1680x1050:1644x948#1596131262.csc.2#1908664615.sad.1593304615:1593304615:1#1908965951.multib.1; _ym_d=1593869990; yc=1594225567.zen.cach%3A1593969966; yabs-frequency=/5/0m0004s7_5u00000/8Y10RG00003uEo7ptt9m00000FWx8KRMFsq00000w3j-/; ys_fp=form-client%3DWeb%26form-page%3Dhttps%253A%252F%252Fyandex.ru%252Fchat%2523%252F%2540%252Fchats%252F1%25252F0%25252F964d3b91-5972-49c2-84d3-ed614622223f%2520%25D0%25AF%25D0%25BD%25D0%25B4%25D0%25B5%25D0%25BA%25D1%2581.%25D0%259C%25D0%25B5%25D1%2581%25D1%2581%25D0%25B5%25D0%25BD%25D0%25B4%25D0%25B6%25D0%25B5%25D1%2580%26form-referrer%3Dhttps%253A%252F%252Fyandex.ru%252Fchat%26form-browser%3DMozilla%252F5.0%2520(Macintosh%253B%2520Intel%2520Mac%2520OS%2520X%252010_15_5)%2520AppleWebKit%252F537.36%2520(KHTML%252C%2520like%2520Gecko)%2520Chrome%252F83.0.4103.116%2520Safari%252F537.36%26form-screen%3D1680%25C3%25971050%25C3%259730%26form-window%3D792%25C3%2597948%26form-app_version%3D2.8.0%26form-reqid%3D1593966167731077-1230441077775610555700303-production-app-host-sas-web-yp-249; skid=8069161091593972389; device_id="a9eb41b4cb3b056e5da4f9a4029a9e7cfea081196"; cycada=xPXy0sesbr5pVmRDiBiYZnAFhHtmn6zZ/YSDpCUU2Gs=; Session_id=3:1594143924.5.1.1593295629841:JeDkBQ:f.1|611645851.-1.0.1:114943352|33600788.310322.2.2:310322|219601.339772.5aiiRX9iIGUU6gzDuKnO4dqTM24; sessionid2=3:1594143924.5.1.1593295629841:JeDkBQ:f.1|611645851.-1.0.1:114943352|33600788.310322.2.2:310322|219601.678091.QGFa-AEA5z46AzNAmKFAL4_4jdM; _ym_isad=2; active-browser-timestamp=1594143926414; q-csrf-token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzMzYwMDc4OCIsImV4cCI6MTU5NDIzMDMzMX0.w4FkWaag4t1D7j42MD2ILP0oenqZiIjo4iOZnshCiwY; ar=1594145799547993-792214; _ym_visorc_10630330=w; spravka=dD0xNTk0MTQ1ODMwO2k9NS4yMjguMjI0LjM3O3U9MTU5NDE0NTgzMDI5MTk5NTkwMjtoPWMyZTI1Mjk4NmVmZjFhNGNjMGZhYmIwZWQ3ZDIyMmZk')
         info = extract(page)
         text = 'Extracted ID data from webpage: ' + ', '.join([f'{a}: {b}' for a,b in info.items()])
         print(text)
