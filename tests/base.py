@@ -5,11 +5,9 @@ This module contains various utilities for running tests.
 import os
 import os.path
 import unittest
-import maigret
-from result import QueryStatus
-from result import QueryResult
-from notify import QueryNotify
-from sites  import SitesInformation
+from maigret.result import QueryStatus, QueryResult
+from maigret.notify import QueryNotify
+from maigret.sites  import SitesInformation
 import warnings
 
 

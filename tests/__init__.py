@@ -1,4 +1,4 @@
-"""Sherlock Tests
+"""Maigret Tests
 
 This package contains various submodules used to run tests.
 """

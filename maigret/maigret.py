@@ -23,10 +23,15 @@ from socid_extractor import parse, extract
 
 from requests_futures.sessions import FuturesSession
 from torrequest import TorRequest
-from result import QueryStatus
-from result import QueryResult
-from notify import QueryNotifyPrint
-from sites  import SitesInformation
+try:
+    from result import QueryStatus, QueryResult
+    from notify import QueryNotifyPrint
+    from sites  import SitesInformation
+except:
+    from .result import QueryStatus, QueryResult
+    from .notify import QueryNotifyPrint
+    from .sites  import SitesInformation
+
 
 module_name = "Maigret (Sherlock fork): Find Usernames Across Social Networks"
 __version__ = "0.12.2"
