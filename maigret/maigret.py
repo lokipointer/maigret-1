@@ -144,7 +144,7 @@ async def get_response(request_future, error_type, social_network, logger):
         error_context = "HTTP Error"
         expection_text = str(err)
     except Exception as err:
-        logger.error(f'Unhandled error while requesting {social_network}: {err}')
+        logger.warning(f'Unhandled error while requesting {social_network}: {err}')
         logger.debug(err, exc_info=True)
         error_context = "Some Error"
         expection_text = str(err)
@@ -376,7 +376,7 @@ async def sherlock(username, site_data, query_notify, logger,
         # TODO: refactor
         resp = net_info.get('resp')
         if not resp:
-            logging.error(f'No response for {social_network}')
+            logger.error(f'No response for {social_network}')
             continue
 
         r, error_text, expection_text = resp
